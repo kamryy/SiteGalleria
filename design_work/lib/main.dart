@@ -5,11 +5,11 @@ import 'package:design_work/screens/welcome_screen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const App());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class App extends StatelessWidget {
+  const App({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
           fontFamily: "Inter",
           colorScheme: ColorScheme.fromSeed(
               tertiary: const Color.fromARGB(255, 0, 194, 0),
-              inversePrimary: const Color.fromARGB(255, 163, 190, 57),
+              inversePrimary: const Color.fromARGB(255, 207, 255, 13),
               secondary: const Color.fromARGB(255, 8, 35, 47),
               seedColor: const Color.fromARGB(255, 14, 102, 143))),
       home: const CollegeDescriptionScreen(),
