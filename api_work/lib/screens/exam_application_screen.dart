@@ -1,3 +1,5 @@
+import 'package:api_work/repo/exam_application_repositories.dart';
+import 'package:api_work/screens/application_succeeded_screen.dart';
 import 'package:api_work/widgets/exam_options_page.dart';
 import 'package:api_work/widgets/guardian_details_page.dart';
 import 'package:api_work/widgets/payment_page.dart';
@@ -6,8 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 
 class ExamsApplicationScreen extends StatefulWidget {
-  const ExamsApplicationScreen({super.key});
-
+  ExamsApplicationScreen({super.key, required this.examRepositories});
+  ExamRepositories examRepositories;
   @override
   State<ExamsApplicationScreen> createState() => _ExamsApplicationScreenState();
 }
@@ -23,9 +25,10 @@ class _ExamsApplicationScreenState extends State<ExamsApplicationScreen> {
     "DESIGN",
     "VIT Entrance",
   ];
+  List paymentOptions = const ["Google Pay", "PhonePe", "Credit Card"];
   double valueOfLinearProgressIndicator = 0.2;
   int? indexOfSelectedExam;
-
+  Map? paymentDetails;
   Map? studentDetails;
   Map? guardianDetails;
   void setStudentDetails(Map studentDetails) {
@@ -40,6 +43,10 @@ class _ExamsApplicationScreenState extends State<ExamsApplicationScreen> {
     indexOfSelectedExam = index;
   }
 
+  void setPaymentDetails(Map paymentDetails) {
+    this.paymentDetails = paymentDetails;
+  }
+
   PageController pageController = PageController();
 
   int step = const int.fromEnvironment("step", defaultValue: 0);
@@ -48,10 +55,12 @@ class _ExamsApplicationScreenState extends State<ExamsApplicationScreen> {
 
   GlobalKey<GuardianDetailsPageState> guardianDetailsPageKey =
       GlobalKey<GuardianDetailsPageState>();
+
+  GlobalKey<PaymentPageState> paymentPageKey = GlobalKey<PaymentPageState>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: step != 3
+      floatingActionButton: step < 3
           ? InkWell(
               onTap: () {
                 if (step == 0) {
@@ -80,14 +89,16 @@ class _ExamsApplicationScreenState extends State<ExamsApplicationScreen> {
                     });
                   }
                 } else if (step == 2) {
-                  pageController.nextPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut);
-
-                  setState(() {
-                    step++;
-                    valueOfLinearProgressIndicator = 0.95;
-                  });
+                  if (guardianDetailsPageKey.currentState!
+                      .saveGuardianDetails()) {
+                    pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut);
+                    setState(() {
+                      step++;
+                      valueOfLinearProgressIndicator = 0.9;
+                    });
+                  }
                 }
               },
               child: const NextButton())
@@ -121,9 +132,24 @@ class _ExamsApplicationScreenState extends State<ExamsApplicationScreen> {
                       child: InkWell(
                         borderRadius:
                             const BorderRadius.all(Radius.circular(24)),
-                        onTap: () {
-                          // Handle the tap event
-                          print("Pay Now tapped");
+                        onTap: () async {
+                          if (paymentPageKey.currentState!
+                              .setPaymentDetails()) {
+                            pageController.nextPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut);
+                            setState(() {
+                              step++;
+                              valueOfLinearProgressIndicator = 1;
+                            });
+                            print(
+                                "student details : $studentDetails, guardian details: $guardianDetails, exam name : ${exams[indexOfSelectedExam!]}, payment details : $paymentDetails]}");
+                            widget.examRepositories.submitApplication(
+                                student_details: studentDetails!,
+                                guardian_details: guardianDetails!,
+                                chosenExam: exams[indexOfSelectedExam!],
+                                payment_details: paymentDetails!);
+                          }
                         },
                         child: Center(
                           child: Container(
@@ -173,6 +199,7 @@ class _ExamsApplicationScreenState extends State<ExamsApplicationScreen> {
           ),
           Expanded(
               child: PageView(
+            physics: const NeverScrollableScrollPhysics(),
             controller: pageController,
             children: [
               ExamOptionsPage(
@@ -186,7 +213,12 @@ class _ExamsApplicationScreenState extends State<ExamsApplicationScreen> {
                 setGuardianDetails: setGuardianDetails,
                 key: guardianDetailsPageKey,
               ),
-              PaymentPage()
+              PaymentPage(
+                key: paymentPageKey,
+                setPaymentDetails: setPaymentDetails,
+                paymentOptions: paymentOptions,
+              ),
+              const ApplicationSucceededScreen()
             ],
           ))
         ],
